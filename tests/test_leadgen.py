@@ -149,3 +149,15 @@ def test_non_buyer_depends_on_icp():
     assert is_non_buyer({'company_name': 'Gemeente Utrecht', 'domain': 'utrecht.nl', 'industry': ''}, [])
     assert not is_non_buyer({'company_name': 'Haimer', 'domain': 'haimer.com',
                              'industry': 'Industrial Machinery'}, ['Manufacturing'])
+
+
+def test_zero_budget_means_unlimited(tmp_path):
+    from search_skills.leadgen import LeadGen
+    from search_skills.store import Store
+
+    gen = LeadGen(object(), Store(tmp_path / 'x.db'))
+    assert gen.daily_budget == 0
+    assert gen.budget_left() == float('inf')
+    gen.calls_today = lambda: 50
+    gen.daily_budget = 40
+    assert gen.budget_left() == -10

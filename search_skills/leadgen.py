@@ -312,7 +312,7 @@ class LeadGen:
         per_topic: int = 8,
         pages_per_topic: int = 2,
         fetch_limit: int = 4,
-        daily_budget: int = 400,
+        daily_budget: int = 0,
         seen: Seen | None = None,
         fetcher=None,
     ) -> None:
@@ -335,7 +335,10 @@ class LeadGen:
         usage = usage_summary()
         return usage['today_search'] + usage['today_fetch']
 
-    def budget_left(self) -> int:
+    def budget_left(self) -> float:
+        '''Calls left today; a budget of 0 (or less) means no daily cap.'''
+        if self.daily_budget <= 0:
+            return float('inf')
         return self.daily_budget - self.calls_today()
 
     # -- stage 1: topics and list pages ---------------------------------

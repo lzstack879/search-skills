@@ -500,12 +500,13 @@ def cmd_loop(args) -> int:
     check_interval = getattr(args, 'adaptive_check', 5)  # 每 N 轮检查一次
     enable_adaptive = not args.no_adaptive if hasattr(args, 'no_adaptive') else True
 
+    budget_label = str(args.budget) if args.budget > 0 else 'unlimited'
     print('lead-gen loop: every %ss, budget %s calls/day, %s%s' % (
-        args.interval, args.budget, 'no time limit' if not deadline else str(args.hours) + 'h',
+        args.interval, budget_label, 'no time limit' if not deadline else str(args.hours) + 'h',
         ', adaptive ICP ON' if enable_adaptive else '',
     ), flush=True)
     _append_log('=== loop start ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                + ' interval=' + str(args.interval) + 's budget=' + str(args.budget)
+                + ' interval=' + str(args.interval) + 's budget=' + budget_label
                 + (' adaptive=ON check_every=' + str(check_interval) if enable_adaptive else ' adaptive=OFF')
                 + ' ===')
     try:
@@ -629,7 +630,7 @@ def _add_leadgen_args(parser) -> None:
     parser.add_argument('--per-topic', type=int, default=8, help='search results per topic')
     parser.add_argument('--pages', type=int, default=2, help='list pages fetched per topic')
     parser.add_argument('--fetch', type=int, default=4, help='company homepages fetched per round')
-    parser.add_argument('--budget', type=int, default=400, help='max search+fetch calls per day')
+    parser.add_argument('--budget', type=int, default=0, help='max search+fetch calls per day (0 = unlimited)')
     parser.add_argument('--cloud-fetch', action='store_true', help='skip local rendering, DeepSeek Fetch only')
     parser.add_argument('--seeds', metavar='CSV', help='skip search, harvest these domains')
     parser.add_argument('--no-llm', action='store_true', help='heuristics only, no chat calls')

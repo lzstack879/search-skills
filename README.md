@@ -63,7 +63,7 @@ python -m search_skills usage                                 # 调用量与花�
 | `--hours` | 12 | 运行时长，0 = 不限 |
 | `--rounds` | 0 | 轮数上限，0 = 不限 |
 | `--interval` | 1200 | 每轮间隔（秒） |
-| `--budget` | 400 | 每日 search + fetch 调用上限 |
+| `--budget` | 0 | 每日 search + fetch 调用上限，0 = 不限 |
 | `--adaptive-check` | 5 | 每 N 轮检查一次是否需要调整 ICP |
 | `--no-adaptive` | 关 | 关闭自适应 ICP |
 
