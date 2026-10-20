@@ -46,7 +46,7 @@ python -m search_skills report --force
 | 自己写正文抽取、去广告、去导航 | 引擎已经返回 `summary` 与干净 Markdown |
 | 需要维护目录站黑名单 | 引擎给 `authority` / `rerank_score`，只做一层兜底过滤 |
 
-依赖只有三个：`httpx`、`openpyxl`、`python-dotenv`。
+必需依赖：`httpx`、`openpyxl`、`python-dotenv`、`dnspython`；`crawl4ai` 可选。
 
 ## 文件结构
 
@@ -57,24 +57,30 @@ seach-skills/
 ├── requirements.txt
 ├── .env.example
 ├── prompts/
-│   ├── search_query.md       搜索提示词 · ICP → 查询
-│   ├── search_judge.md       搜索提示词 · 结果判读 → 官网
-│   └── fetch_extract.md      抓取提示词 · Markdown → 七个字段
+│   ├── search_query.md       run · ICP → 查询
+│   ├── search_judge.md       run · 结果判读 → 官网
+│   ├── fetch_extract.md      官网 Markdown → 七个字段
+│   ├── search_topics.md      leadgen · ICP → 名单页查询
+│   ├── mine_names.md         leadgen · 名单页 → 公司名
+│   ├── icp_from_site.md      icp · 官网 → ICP
+│   ├── icp_from_answers.md   icp · 5 问 → ICP
+│   ├── mine_exhibitors.md    seedpages · 参展商页 → 公司
+│   └── gen_seeds.md          seeds · 模型提名候选公司
 ├── search_skills/
 │   ├── client.py             DeepSeek Search / Fetch / Chat
 │   ├── fetcher.py            抓取两层：crawl4ai 本地渲染 → DeepSeek Fetch 兜底
 │   ├── pipeline.py           编排 + 无模型降级路径
 │   ├── leadgen.py            名单挖掘：榜单/招聘页 → 公司名 → 官网 → 入库
 │   ├── adaptive.py           自适应 ICP：产出下降时由模型扩展地区/行业/职位
+│   ├── emailver.py           邮箱验证：MX → snippet → 官网 → SMTP
+│   ├── seedpages.py          参展商/协会名单页 → seeds.csv
+│   ├── seeds.py              模型提名候选公司 + MX 校验
 │   ├── icp_builder.py        官网/问卷 → data/icp.json
 │   ├── store.py              SQLite
 │   ├── report.py             日报 xlsx
 │   └── cli.py                命令行
-├── data/
-│   ├── companies.db          主库
-│   ├── usage.json            调用与花费账本
-│   └── icp.json              默认 ICP
-└── reports/2026/10/19潜在客户搜索报表.xlsx
+├── data/                     运行时生成（不入库）：companies.db / icp.json / seen.json / usage.json
+└── reports/                  运行时生成（不入库）：YYYY/MM/DD潜在客户搜索报表.xlsx
 ```
 
 ## 两套提示词
