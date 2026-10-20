@@ -1,4 +1,4 @@
-# seach-skills
+# search-skills
 
 B2B 潜在客户搜索工具：从 ICP（理想客户画像）出发，找公司、认官网、抽字段、验证邮箱，结果落 SQLite，每天出一份 Excel 报表。
 

@@ -20,7 +20,7 @@ description: 公司解析与潜在客户搜索。只用 DeepSeek Search API 搜�
 ## 一分钟上手
 
 ```bash
-cd seach-skills
+cd search-skills
 python -m venv .venv
 .venv/Scripts/pip install -r requirements.txt      # Windows
 # .venv/bin/pip install -r requirements.txt        # macOS / Linux
@@ -51,7 +51,7 @@ python -m search_skills report --force
 ## 文件结构
 
 ```text
-seach-skills/
+search-skills/
 ├── SKILL.md                  本文件
 ├── README.md                 安装与调度
 ├── requirements.txt
