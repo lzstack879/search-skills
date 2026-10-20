@@ -247,7 +247,7 @@ python -m search_skills leadgen --topics 4     # A：灌新公司
 python -m search_skills loop --hours 12        # A：后台持续跑
 python -m search_skills emails --limit 20      # B：给积压线索找邮箱
 python -m search_skills contacts --export-tasks data/contact_tasks.json --limit 10  # C1：导出待补全清单
-# （把 tasks 交给 /contacts 或其他 agent 研究，填好 results.json）
+# （把 tasks 交给 agent 研究，填好 results.json）
 python -m search_skills contacts --import-results data/contact_results.json         # C2：导回结果
 ```
 

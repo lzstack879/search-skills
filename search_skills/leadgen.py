@@ -540,6 +540,9 @@ class LeadGen:
     async def round(self, count: int = 4) -> dict:
         self.store.init()
         self.client.check_credentials()
+        if self.use_llm and hasattr(self.client, 'verify_key'):
+            # A rejected key otherwise fails silently inside every fallback below.
+            await self.client.verify_key()
         self.known = self.store.dedupe_keys()
 
         stats = {

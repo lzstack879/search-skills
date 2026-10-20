@@ -13,14 +13,16 @@ from datetime import datetime
 from .store import Store
 
 
+EXTRA_GENERIC = {'anfrage', 'vertrieb', 'verkauf', 'zentrale', 'empfang', 'reception'}
+
+
 def looks_generic(email: str) -> bool:
-    '''Generic mailboxes (info@, contact@, sales@) vs personal (j.doe@, jdoe@).'''
+    '''Shared inboxes (info@, office@, vertrieb@) vs a person's mailbox.'''
     if not email or '@' not in email:
         return False
-    local = email.split('@')[0].lower()
-    generic_prefixes = ('info', 'contact', 'sales', 'hello', 'support', 'inquiry',
-                        'kontakt', 'anfrage', 'vertrieb')
-    return local in generic_prefixes
+    from .emailver import GENERIC_LOCAL
+    local = email.split('@')[0].lower().split('+')[0]
+    return local in GENERIC_LOCAL or local in EXTRA_GENERIC
 
 
 def looks_named(perple: str) -> bool:
@@ -42,23 +44,30 @@ def validate_contact_result(domain: str, name: str, title: str, email: str,
         return False, 'missing or too-short name'
     if not title or len(title.strip()) < 2:
         return False, 'missing or too-short title'
+    from .emailver import classify
+    from .store import host_of
+
     # Email is optional (agent may find a name but no direct email).
     if email:
-        from .emailver import host_of
-        email_host = host_of('https://' + email.split('@')[-1])
-        if email_host and email_host != domain:
-            return False, 'email is not on the company domain'
         if looks_generic(email):
             return False, 'email is still generic, not a person'
-    # Evidence must be on the company domain or a known press/news site.
-    from .emailver import host_of
+        kind, why = classify(domain, email)
+        if kind == 'blocked':
+            if why == 'foreign-domain':
+                return False, 'email is not on the company domain'
+            return False, 'email rejected: ' + why
+    # Evidence must be on the company domain (subdomains ok) or a press wire.
     ev_host = host_of(evidence_url)
-    # Allow press releases that quote the contact.
-    ok_hosts = {domain, 'linkedin.com', 'crunchbase.com', 'prnewswire.com',
-                'businesswire.com', 'globenewswire.com'}
-    if ev_host not in ok_hosts and not ev_host.endswith('.pr.co'):
+    on_domain = ev_host == domain or ev_host.endswith('.' + domain)
+    if not on_domain and ev_host not in PRESS_HOSTS and not ev_host.endswith('.pr.co'):
         return False, 'evidence is not on the company domain or known press site'
     return True, ''
+
+
+# Third-party pages that may quote a named executive. LinkedIn is excluded on
+# purpose: profiles sit behind a login wall, so the evidence cannot be re-checked.
+PRESS_HOSTS = {'prnewswire.com', 'businesswire.com', 'globenewswire.com',
+               'presseportal.de', 'openpr.de'}
 
 
 class ContactEnricher:

@@ -36,6 +36,10 @@ class DeepSeekError(RuntimeError):
     '''A DeepSeek endpoint failed in a way the caller cannot ignore.'''
 
 
+class DeepSeekAuthError(DeepSeekError):
+    '''The key was rejected (401/403). Retrying or falling back cannot help.'''
+
+
 @dataclass
 class SearchHit:
     '''One search result, mirroring DeepSeek response fields.'''
@@ -176,6 +180,10 @@ class DeepSeekClient:
         '''Raise early when the key is missing, before any query is spent.'''
         self._headers()
 
+    async def verify_key(self) -> None:
+        '''One tiny chat call; raises DeepSeekAuthError if the key is rejected.'''
+        await self.complete('ping', max_tokens=1)
+
     async def _post(self, url: str, payload: dict) -> dict:
         headers = self._headers()
         last_error = ''
@@ -193,6 +201,8 @@ class DeepSeekClient:
                             last_error = 'response was not JSON'
                     else:
                         last_error = 'HTTP ' + str(response.status_code) + ': ' + response.text[:300]
+                        if response.status_code in (401, 403):
+                            raise DeepSeekAuthError(last_error)
                         if response.status_code not in RETRY_STATUS:
                             raise DeepSeekError(last_error)
                 if attempt < self.max_retries:

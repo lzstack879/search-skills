@@ -36,18 +36,7 @@ CREATE TABLE IF NOT EXISTS companies (
     source_url TEXT NOT NULL DEFAULT '',
     raw_json TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
-    domain TEXT NOT NULL DEFAULT '',
-    email_status TEXT NOT NULL DEFAULT '',
-    email_source TEXT NOT NULL DEFAULT '',
-    email_kind TEXT NOT NULL DEFAULT '',
-    email_grade TEXT NOT NULL DEFAULT '',
-    email_attempts INTEGER NOT NULL DEFAULT 0,
-    email_checked_at TEXT NOT NULL DEFAULT '',
-    email_evidence TEXT NOT NULL DEFAULT '',
-    contact_status TEXT NOT NULL DEFAULT '',
-    contact_source TEXT NOT NULL DEFAULT '',
-    contact_evidence TEXT NOT NULL DEFAULT ''
+    updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_companies_created ON companies(created_at);
 CREATE TABLE IF NOT EXISTS runs (
@@ -79,6 +68,9 @@ MIGRATIONS = (
     ("email_evidence", "ALTER TABLE companies ADD COLUMN email_evidence TEXT NOT NULL DEFAULT ''"),
     ("email_verdict", "ALTER TABLE companies ADD COLUMN email_verdict TEXT NOT NULL DEFAULT ''"),
     ("email_grade", "ALTER TABLE companies ADD COLUMN email_grade TEXT NOT NULL DEFAULT ''"),
+    ("contact_status", "ALTER TABLE companies ADD COLUMN contact_status TEXT NOT NULL DEFAULT ''"),
+    ("contact_source", "ALTER TABLE companies ADD COLUMN contact_source TEXT NOT NULL DEFAULT ''"),
+    ("contact_evidence", "ALTER TABLE companies ADD COLUMN contact_evidence TEXT NOT NULL DEFAULT ''"),
 )
 
 EMAIL_TERMINAL = ('found', 'rejected', 'domain_dead', 'no_contact')

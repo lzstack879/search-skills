@@ -27,7 +27,7 @@ description: 把通用邮箱（contact@、info@）补成有名字的决策人（
 # 1. 导出待补全清单（默认 10 家，可以 --limit 50）
 python -m search_skills contacts --export-tasks data/contact_tasks.json --limit 10
 
-# 2. 把 tasks.json 交给 /contacts 或其他 agent 研究
+# 2. 把 tasks.json 交给 agent 研究
 #    agent 填好 results.json（格式见下）
 
 # 3. 导回结果
@@ -106,7 +106,7 @@ Agent 填好的结果，每家一条：
 脚本只接受符合以下条件的结果：
 
 - `name` 和 `title` 非空，长度 ≥ 2 字符
-- `evidence_url` 是 https/http，且在公司域名上或已知新闻站（prnewswire、businesswire、linkedin、crunchbase）
+- `evidence_url` 是 https/http，且在公司域名上或已知新闻站（prnewswire、businesswire、globenewswire、presseportal、openpr；LinkedIn 有登录墙，不算证据）
 - `email` 如果非空，必须在公司域名上，且不能是 contact@、info@ 等通用邮箱
 
 不符合规则的会被拒绝（`rejected`），拒绝原因记在导入报告里。

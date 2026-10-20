@@ -11,7 +11,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from .adaptive import RoundStats, analyze_and_adjust_icp, format_adjustment_report
-from .client import DeepSeekClient, DeepSeekError, usage_summary
+from .client import DeepSeekAuthError, DeepSeekClient, DeepSeekError, usage_summary
 from .icp_builder import (
     ICP_PATH,
     TEMPLATE_PATH,
@@ -299,7 +299,7 @@ def cmd_contacts(args) -> int:
         out = enricher.export_tasks(args.export_tasks, limit=args.limit,
                                     min_score=args.min_score)
         print('exported: %s contact tasks -> %s' % (out['exported'], out['path']))
-        print('把 tasks 交给 /contacts 或其他 agent 研究，结果写成 results.json 再 --import-results 导回')
+        print('把 tasks 交给 agent 研究，结果写成 results.json 再 --import-results 导回')
         return 0
 
     if args.import_results:
@@ -564,6 +564,11 @@ def cmd_loop(args) -> int:
                 stats['round_id'] = round_no
                 stats['time_cost'] = time.time() - round_start
                 round_stats_history.append(RoundStats.from_dict(stats))
+            except DeepSeekAuthError as e:
+                line = 'DeepSeek rejected the API key, stopping: ' + str(e)[:160]
+                print(line, flush=True)
+                _append_log(datetime.now().strftime('%Y-%m-%d %H:%M:%S') + ' ' + line)
+                return 2
             except DeepSeekError as e:
                 line = 'DeepSeek error: ' + str(e)
                 print(line, flush=True)

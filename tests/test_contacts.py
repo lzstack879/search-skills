@@ -68,6 +68,47 @@ def test_validate_contact_result_accepts_press_release():
     assert ok
 
 
+def test_generic_list_matches_email_verifier():
+    # office@ / team@ / vertrieb@ are shared inboxes too
+    assert looks_generic('office@firma.at')
+    assert looks_generic('team@acme.com')
+    assert looks_generic('vertrieb@firma.de')
+
+
+def test_evidence_on_subdomain_is_accepted():
+    ok, _ = validate_contact_result('acme.com', 'Jane Doe', 'VP Sales', '',
+                                    'https://about.acme.com/leadership')
+    assert ok
+
+
+def test_linkedin_evidence_is_rejected():
+    # profiles are behind a login wall, the evidence cannot be re-checked
+    ok, _ = validate_contact_result('acme.com', 'Jane Doe', 'VP Sales', '',
+                                    'https://www.linkedin.com/in/janedoe')
+    assert not ok
+
+
+def test_old_database_gets_contact_columns(tmp_path):
+    import sqlite3
+
+    path = tmp_path / 'old.db'
+    conn = sqlite3.connect(path)
+    conn.execute('''CREATE TABLE companies (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        dedupe_key TEXT NOT NULL UNIQUE, company_name TEXT NOT NULL DEFAULT '',
+        company_website TEXT NOT NULL DEFAULT '', company_perple TEXT NOT NULL DEFAULT '',
+        company_email TEXT NOT NULL DEFAULT '', industry TEXT NOT NULL DEFAULT '',
+        summary TEXT NOT NULL DEFAULT '', match_result TEXT NOT NULL DEFAULT '',
+        match_score INTEGER NOT NULL DEFAULT 0, query TEXT NOT NULL DEFAULT '',
+        source_url TEXT NOT NULL DEFAULT '', raw_json TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL)''')
+    conn.commit()
+    conn.close()
+    store = Store(path).init()
+    store.upsert({'company_name': 'Firma', 'company_website': 'https://firma.de',
+                  'company_email': 'info@firma.de', 'match_score': 70})
+    assert store.list_for_contact_enrichment(limit=5)
+
+
 def test_validate_contact_result_rejects_generic_email():
     ok, reason = validate_contact_result(
         'acme.com', 'Jane Doe', 'VP Sales', 'info@acme.com',

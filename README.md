@@ -51,7 +51,7 @@ python -m search_skills emails --limit 20
 
 # 4. 补全联系人（可选：把通用邮箱补成有名字的决策人）
 python -m search_skills contacts --export-tasks data/contact_tasks.json --limit 10
-# 把 tasks 交给 /contacts 或其他 agent 研究，填好 results.json
+# 把 tasks 交给 agent 研究，填好 results.json
 python -m search_skills contacts --import-results data/contact_results.json
 
 # 5. 查看与报表
