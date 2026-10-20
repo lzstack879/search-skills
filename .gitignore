@@ -1,0 +1,20 @@
+# secrets
+.env
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# runtime data (keep the folders)
+data/*
+!data/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
