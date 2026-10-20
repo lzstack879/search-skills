@@ -232,26 +232,35 @@ python -m search_skills icp --url https://acme.com --strict
 生成的 JSON 与本节 schema 完全一致，并带 `_meta`（method / source / confidence / evidence），
 可直接喂给 `run` 与 `leadgen`。
 
-## 搜索层拆成两个 skill
+## 搜索层拆成三个 skill
 
-`run`（一条查询找一个官网）命中率太低，已由两个专职 skill 取代：
+`run`（一条查询找一个官网）命中率太低，已由三个专职 skill 取代：
 
 | skill | 职责 | 入口 |
 | --- | --- | --- |
 | [lead-finder](lead-finder/SKILL.md) | ICP → 公司 + 官网 + 匹配分（**不找邮箱**） | `leadgen` / `loop` |
 | [email-verifier](email-verifier/SKILL.md) | 域名 → 可信邮箱 或 `no_contact` | `emails` |
+| [contact-enricher](contact-enricher/SKILL.md) | 通用邮箱 → 有名字的决策人 + 直达邮箱 | `contacts` |
 
 ```bash
 python -m search_skills leadgen --topics 4     # A：灌新公司
 python -m search_skills loop --hours 12        # A：后台持续跑
 python -m search_skills emails --limit 20      # B：给积压线索找邮箱
+python -m search_skills contacts --export-tasks data/contact_tasks.json --limit 10  # C1：导出待补全清单
+# （把 tasks 交给 /contacts 或其他 agent 研究，填好 results.json）
+python -m search_skills contacts --import-results data/contact_results.json         # C2：导回结果
 ```
 
-两者靠数据库字段交接：A 写入 `domain` + `email_status='pending'`，B 消费 pending 并写回
+A 写入 `domain` + `email_status='pending'`，B 消费 pending 并写回
 `email_status / email_source / email_kind / email_attempts`。
+C 消费 `company_email` 不为空但 `company_perple` 为空或只是角色（info@、contact@）的线索，
+写回 `company_perple / contact_status / contact_source / contact_evidence`，
+并在 agent 找到直达邮箱时一并升级 `company_email`。
 
-状态机：`pending → found | no_contact | domain_dead | rejected`；
-`no_contact` 7 天后自动重试，最多 3 次。
+状态机：
+- **email_status**: `pending → found | no_contact | domain_dead | rejected | needs_agent`；
+  `no_contact` 7 天后自动重试，最多 3 次
+- **contact_status**: `(空) → needs_contact → found`
 
 `loop` 支持 `--budget`（每日 search+fetch 调用上限）、`data/STOP` 文件（优雅停止）、
 日志写 `data/leadgen.log`，已尝试过的公司名记在 `data/seen.json`。

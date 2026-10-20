@@ -288,6 +288,34 @@ def cmd_emails(args) -> int:
     return 0
 
 
+def cmd_contacts(args) -> int:
+    '''Skill C: turn generic mailboxes into named decision-makers via agents.'''
+    from .contacts import ContactEnricher
+
+    store = Store(args.db).init()
+    enricher = ContactEnricher(store)
+
+    if args.export_tasks:
+        out = enricher.export_tasks(args.export_tasks, limit=args.limit,
+                                    min_score=args.min_score)
+        print('exported: %s contact tasks -> %s' % (out['exported'], out['path']))
+        print('把 tasks 交给 /contacts 或其他 agent 研究，结果写成 results.json 再 --import-results 导回')
+        return 0
+
+    if args.import_results:
+        report = enricher.import_results(args.import_results)
+        for row in report['rows']:
+            print('  + %-30s %-40s' % (row['company_name'][:30], row['contact'][:40]))
+        for err in report['errors']:
+            print('  - %-30s %s' % (str(err['dedupe_key'])[:30], err['reason']))
+        print('')
+        print('accepted: %s | rejected: %s' % (report['accepted'], report['rejected']))
+        return 0
+
+    print('contacts command: use --export-tasks or --import-results')
+    return 1
+
+
 def cmd_report(args) -> int:
     store = Store(args.db).init()
     when = date.fromisoformat(args.date) if args.date else date.today()
@@ -727,6 +755,14 @@ def build_parser() -> argparse.ArgumentParser:
     mail.add_argument('--cloud-fetch', action='store_true', help='skip local rendering')
     mail.add_argument('--db', type=Path, default=DEFAULT_DB)
     mail.set_defaults(func=cmd_emails)
+
+    contact = sub.add_parser('contacts', help='enrich generic mailboxes with named contacts')
+    contact.add_argument('--db', type=Path, default=DEFAULT_DB)
+    contact.add_argument('--export-tasks', type=str, metavar='PATH', help='export contact tasks for agents')
+    contact.add_argument('--import-results', type=str, metavar='PATH', help='import agent contact results')
+    contact.add_argument('--limit', type=int, default=10, help='how many to export')
+    contact.add_argument('--min-score', type=int, default=60, help='minimum match_score')
+    contact.set_defaults(func=cmd_contacts)
 
     report = sub.add_parser('report', help='build today xlsx')
     report.add_argument('--date', help='any date inside the ISO week')

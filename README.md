@@ -11,6 +11,7 @@ B2B 潜在客户搜索工具：从 ICP（理想客户画像）出发，找公司
 | [icp-builder](icp-builder/SKILL.md) | 官网或 5 个问题 → `data/icp.json` | `icp` |
 | [lead-finder](lead-finder/SKILL.md) | ICP → 名单页 → 公司名 → 官网 → 匹配分 | `leadgen` / `loop` |
 | [email-verifier](email-verifier/SKILL.md) | 域名 → MX + SMTP 验证过的邮箱，或 `no_contact` | `emails` |
+| [contact-enricher](contact-enricher/SKILL.md) | 通用邮箱 → 有名字的决策人 + 直达邮箱（需 agent） | `contacts` |
 | 自适应 ICP | `loop` 中产出连续下降时，让模型扩展地区/行业/职位 | `loop`（默认开启） |
 
 总体说明见 [SKILL.md](SKILL.md)。
@@ -48,7 +49,12 @@ python -m search_skills loop --hours 12 --interval 1200       # 后台持续跑
 # 3. 找邮箱
 python -m search_skills emails --limit 20
 
-# 4. 查看与报表
+# 4. 补全联系人（可选：把通用邮箱补成有名字的决策人）
+python -m search_skills contacts --export-tasks data/contact_tasks.json --limit 10
+# 把 tasks 交给 /contacts 或其他 agent 研究，填好 results.json
+python -m search_skills contacts --import-results data/contact_results.json
+
+# 5. 查看与报表
 python -m search_skills list --limit 20
 python -m search_skills report --force                        # reports/YYYY/MM/DD潜在客户搜索报表.xlsx
 python -m search_skills usage                                 # 调用量与花费

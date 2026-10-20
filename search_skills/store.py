@@ -36,7 +36,18 @@ CREATE TABLE IF NOT EXISTS companies (
     source_url TEXT NOT NULL DEFAULT '',
     raw_json TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    domain TEXT NOT NULL DEFAULT '',
+    email_status TEXT NOT NULL DEFAULT '',
+    email_source TEXT NOT NULL DEFAULT '',
+    email_kind TEXT NOT NULL DEFAULT '',
+    email_grade TEXT NOT NULL DEFAULT '',
+    email_attempts INTEGER NOT NULL DEFAULT 0,
+    email_checked_at TEXT NOT NULL DEFAULT '',
+    email_evidence TEXT NOT NULL DEFAULT '',
+    contact_status TEXT NOT NULL DEFAULT '',
+    contact_source TEXT NOT NULL DEFAULT '',
+    contact_evidence TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_companies_created ON companies(created_at);
 CREATE TABLE IF NOT EXISTS runs (
@@ -253,6 +264,42 @@ class Store:
             conn.executemany(
                 "UPDATE companies SET email_status='needs_agent', updated_at=? WHERE dedupe_key=?",
                 [(_now(), key) for key in keys],
+            )
+
+    def list_for_contact_enrichment(self, limit: int = 10, min_score: int = 60) -> list[dict]:
+        '''Leads with a working email but no named contact in company_perple.'''
+        from .contacts import looks_generic, looks_named
+        rows = self.list_recent(500)
+        # Filter: has email, that email is generic, and no named contact yet.
+        candidates = [
+            r for r in rows
+            if r.get('company_email')
+            and looks_generic(r['company_email'])
+            and not looks_named(r.get('company_perple', ''))
+            and r.get('match_score', 0) >= min_score
+            and r.get('contact_status') not in ('found', 'needs_contact')
+        ]
+        # Sort by score desc, take limit.
+        candidates.sort(key=lambda x: x.get('match_score', 0), reverse=True)
+        return candidates[:limit]
+
+    def mark_needs_contact(self, keys: list[str]) -> None:
+        if not keys:
+            return
+        with self._connect() as conn:
+            conn.executemany(
+                "UPDATE companies SET contact_status='needs_contact', updated_at=? WHERE dedupe_key=?",
+                [(_now(), key) for key in keys],
+            )
+
+    def update_contact(self, key: str, **fields) -> None:
+        '''Write back agent's contact enrichment result.'''
+        fields['updated_at'] = _now()
+        placeholders = ', '.join(f'{k}=:{k}' for k in fields)
+        with self._connect() as conn:
+            conn.execute(
+                f'UPDATE companies SET {placeholders} WHERE dedupe_key=:key',
+                {'key': key, **fields},
             )
 
     def email_stats(self) -> dict:
