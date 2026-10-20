@@ -159,16 +159,12 @@ async def analyze_and_adjust_icp(
 **任务**：判断是否需要调整 ICP，如果需要，提出具体修改方案。
 
 **调整原则**：
-1. **地区扩展**：某个国家连续 5 轮命中率低 → 添加相邻国家（德国→法国/荷兰，法国→比利时/瑞士）
-2. **行业扩展**：当前行业搜索充分（已找到 50+ 公司）→ 添加相邻行业
-   - Manufacturing → Industrial Machinery, Automation
-   - Healthcare → Medical Devices, Pharmaceuticals
-   - Legal Services → Consulting, Professional Services
-3. **职位泛化**：高级职位找不到 → 降级到中级职位
-   - Head of XX → XX Manager
-   - CTO → IT Director
-4. **地区收缩**：某个国家连续 8 轮都是重复/丢弃 → 暂时移除，给其他国家更多机会
-5. **不要一次调整太多**：最多改 2 个维度（比如：地区 +1 + 行业 +1）
+1. **所有调整都要服务于 ICP 的「产品」**：新增的行业/地区里，必须仍然有公司需要这个产品。
+2. **地区扩展**：某个地区连续多轮命中率低 → 添加语言/市场相近的相邻地区。
+3. **行业扩展**：当前行业搜索充分 → 添加与现有行业相邻、且同样需要该产品的行业。
+4. **职位泛化**：高级职位找不到 → 加入同一职能的中级职位（如 Head of X → X Manager）。
+5. **地区收缩**：某个地区连续 8 轮都是重复/丢弃 → 暂时移除，给其他地区更多机会。
+6. **不要一次调整太多**：最多改 2 个维度（比如：地区 +1 + 行业 +1）。
 
 **输出 JSON**（严格格式）：
 ```json
@@ -190,15 +186,15 @@ async def analyze_and_adjust_icp(
 ```json
 {{
   "need_adjust": true,
-  "reason": "德国连续 5 轮新增 < 2 家，搜索接近枯竭",
+  "reason": "<地区 A> 连续 5 轮新增 < 2 家，搜索接近枯竭",
   "adjustments": {{
-    "add_geography": ["Austria", "Switzerland"],
-    "add_industries": ["Industrial Machinery"],
+    "add_geography": ["<相邻地区 B>"],
+    "add_industries": ["<相邻行业>"],
     "add_titles": [],
     "remove_geography": [],
-    "comment": "扩展到德语区邻国 + 添加相邻行业"
+    "comment": "扩展到语言相近的邻近市场 + 一个同样需要该产品的相邻行业"
   }},
-  "expected_improvement": "奥地利和瑞士预计有 30-50 家制造企业，工业机械行业可再找 20-30 家"
+  "expected_improvement": "<一句话说明预期新增的公司来源>"
 }}
 ```
 '''

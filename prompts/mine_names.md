@@ -16,16 +16,17 @@
 | `vendor` | 公司在**卖**同类产品/服务，或这页是“Best XX tools”榜单、评测站、竞品目录 | 丢弃 |
 | `unknown` | 判断不了 | 保留（交给后续过滤） |
 
-例：一页写着“XX 公司招聘知识管理专员” → `buyer`；
-一页写着“2026 最佳知识库软件 20 强” → 里面全是 `vendor`。
+“同类”指 ICP 里「产品」的同类。例：产品是 CRM，
+一页写着“XX 公司招聘销售运营经理” → `buyer`；
+一页写着“最佳 CRM 软件 20 强” → 里面全是 `vendor`。
 
 ## 铁律
 
 1. **只抄页面里出现的公司名**，不翻译、不改大小写、不补全。
 2. **排除非公司主体**：人名、职位名、产品名、栏目名（Privacy policy / Terms / Login / Careers）、
    城市名、协会名、“Top 10”这类标题。
-3. **排除巨型公司**（Microsoft、Google、Salesforce、HubSpot、Siemens、Bosch、阿里、腾讯、华为 等）。
-   目标是 10~500 人的中小团队。
+3. **排除明显超出 ICP「公司规模」的巨型公司**（Microsoft、Google、Amazon 这类全球巨头）。
+   规模以 ICP 为准，没有给出时按 10~500 人处理。
 4. `name` 用最短可识别写法（`Spekit` 而非 `Spekit Inc.`；中文保留全称，如 `大寰机器人`）。
 5. `hint` ≤ 40 字：写页面里的**信号**（在招什么岗、采购什么、拿了哪轮钱），没有就留空。
 6. 最多返回 `{{LIMIT}}` 家；同一家不要重复。
@@ -36,8 +37,8 @@
 ```json
 {
   "companies": [
-    {"name": "苏州某某精密", "hint": "在招 MES 工程师，200 人", "role": "buyer"},
-    {"name": "某某知识库", "hint": "知识库 SaaS 厂商", "role": "vendor"}
+    {"name": "Acme Logistics", "hint": "在招销售运营经理，约 200 人", "role": "buyer"},
+    {"name": "SomeCRM", "hint": "CRM SaaS 厂商", "role": "vendor"}
   ]
 }
 ```

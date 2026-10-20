@@ -56,28 +56,35 @@ NAV_WORDS = {
 NAV_PREFIXES = ('contact ', 'over ', 'about ', 'über ', 'uber ', 'à propos', 'a propos',
                 'privacy', 'impressum', 'datenschutz', 'cookies', 'sitemap', 'login')
 
-# Public bodies, associations, consultancies are not manufacturing buyers.
+# Public bodies and member associations are not companies, whatever the ICP.
 PUBLIC_RE = re.compile(
     r'\.(gov|gouv|overheid|bund|mil)(\.[a-z]{2})?$|gemeente|stadt|kommune|mairie|'
     r'ministry|ministerie|ministerium|municipality|city of|'
-    r'\bverband\b|\bverein\b|\bassociation\b|\bchamber\b|\binstitut[e]?\b|'
-    r'\bconsulting\b|\bconsultancy\b|\badvisory\b|\bberatung\b',
+    r'\bverband\b|\bverein\b|\bassociation\b|\bchamber\b',
     re.I,
 )
 
-NON_BUYER_INDUSTRIES = {'Consulting', 'Advisory', 'Training', 'Media', 'Association', 'Government'}
+# Never a commercial buyer.
+NON_COMPANY_INDUSTRIES = {'association', 'government'}
+
+# Service firms that often surface on list pages. They are dropped only when the
+# ICP does not target them; a consultancy ICP keeps them.
+SERVICE_INDUSTRIES = {'consulting', 'advisory', 'training', 'media'}
 
 
 def is_public_sector(name: str, domain: str) -> bool:
     return bool(PUBLIC_RE.search((name or '').lower() + ' ' + (domain or '').lower()))
 
 
-def is_non_buyer(record: dict) -> bool:
-    '''Consulting, associations, government are not manufacturing buyers.'''
+def is_non_buyer(record: dict, icp_industries: list[str] | None = None) -> bool:
+    '''Public bodies always; service firms only when the ICP is not about them.'''
     if is_public_sector(record.get('company_name', ''), record.get('domain', '')):
         return True
-    industry = str(record.get('industry', '')).strip()
-    return industry in NON_BUYER_INDUSTRIES
+    industry = str(record.get('industry', '')).strip().lower()
+    if industry in NON_COMPANY_INDUSTRIES:
+        return True
+    targeted = {item.strip().lower() for item in (icp_industries or [])}
+    return industry in SERVICE_INDUSTRIES and industry not in targeted
 
 DOMAIN_RE = re.compile(r'^(https?://)?(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(/.*)?$', re.I)
 
@@ -194,7 +201,7 @@ SIGNAL_BUCKETS = (
     ('招标/采购公告（预算已批）', 'tender'),
     ('展会/协会参展商名单（一页几十家）', 'expo'),
     ('融资/扩张新闻（刚有钱，最缺系统）', 'funding'),
-    ('政府/行业名录（专精特新、500 强）', 'directory'),
+    ('政府/行业名录（协会会员录、行业榜单）', 'directory'),
 )
 
 
@@ -208,9 +215,9 @@ def heuristic_topics(icp: ICP, count: int = 4) -> list[str]:
         shapes = [
             '"' + industry + '" 招聘 ' + year + ' ' + geo,
             '招标 ' + industry + ' 项目 ' + year + ' 公告',
-            year + ' 工业博览会 参展商名单',
+            year + ' ' + industry + ' 展会 参展商名单',
             '"' + industry + '" 企业 融资 ' + year + ' ' + geo,
-            year + ' 专精特新 名单 ' + geo,
+            year + ' ' + industry + ' 协会 会员 名单 ' + geo,
             '"' + industry + '" 采购 公告 ' + year,
         ]
     else:
@@ -350,6 +357,7 @@ class LeadGen:
                 + '\n\n## 本轮聚焦（必须遵守）'
                 + '\n信号类型：' + label
                 + '\n地区：' + geo
+                + '\n年份：' + str(date.today().year)
                 + '\nCOUNT=' + str(count)
             )
             if recent:
@@ -509,7 +517,7 @@ class LeadGen:
                     record['email_kind'] = kind
             record['email_status'] = 'found' if email else 'pending'
             record['email_source'] = 'extract' if email else ''
-            if not self._fits_icp(record) or is_non_buyer(record):
+            if not self._fits_icp(record) or is_non_buyer(record, self.icp.industries):
                 stats['dropped'] += 1
                 continue
             self.seen.hosts.add(root)
@@ -618,7 +626,7 @@ class LeadGen:
                     record['email_kind'] = kind
             record['email_status'] = 'found' if email else 'pending'
             record['email_source'] = 'extract' if email else ''
-            if not self._fits_icp(record) or is_non_buyer(record):
+            if not self._fits_icp(record) or is_non_buyer(record, self.icp.industries):
                 stats['dropped'] = stats.get('dropped', 0) + 1
                 continue
             record['query'] = cand.name

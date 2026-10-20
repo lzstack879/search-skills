@@ -134,3 +134,18 @@ def test_list_pages_get_a_bigger_budget():
     assert gen._page_budget([SearchHit(title='2026 Hannover Messe Ausstellerliste')]) == 4
     assert gen._page_budget([SearchHit(title='Random blog post')]) == 2
 
+
+
+def test_non_buyer_depends_on_icp():
+    from search_skills.leadgen import is_non_buyer
+
+    consultancy = {'company_name': 'Acme Partners', 'domain': 'acme.com', 'industry': 'Consulting'}
+    # Dropped when the ICP is about something else...
+    assert is_non_buyer(consultancy, ['Manufacturing'])
+    # ...but kept when consultancies are the target.
+    assert not is_non_buyer(consultancy, ['Consulting'])
+    # Public bodies and associations are dropped for any ICP.
+    assert is_non_buyer({'company_name': 'X', 'domain': 'x.de', 'industry': 'Association'}, ['Association'])
+    assert is_non_buyer({'company_name': 'Gemeente Utrecht', 'domain': 'utrecht.nl', 'industry': ''}, [])
+    assert not is_non_buyer({'company_name': 'Haimer', 'domain': 'haimer.com',
+                             'industry': 'Industrial Machinery'}, ['Manufacturing'])

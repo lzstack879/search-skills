@@ -13,7 +13,7 @@
 2. **邮箱只从原文抄**。允许从正文、`mailto:` 链接、页脚里取；**不要猜测** `info@域名`、`sales@域名` 这类模式。
 3. **人名要带职位**，格式 `姓名（职位）`；多个人用中文顿号分隔，最多 3 个。只写正文里出现的、有名字的人，不要写”销售团队”。
 4. **`summary` 只描述这家公司做什么**，不写评价、不写营销口号、不写 cookie 提示，≤120 字，用中文。页面只有 cookie/隐私政策/登录框时，summary 留空。
-5. **`industry` 从给定 ICP 行业列表里挑一个**；都不匹配就填原文里的行业词。严禁填写服务业、咨询业（Consulting、Advisory、Training）、政府机构、协会、媒体，这些不是制造业买方。
+5. **`industry` 从给定 ICP 行业列表里挑一个**；都不匹配就如实填这家公司自己的行业（英文通用名），不要为了凑 ICP 硬套。
 6. **`match_result` 必须包含等级与分数**，格式见下。
 
 ## `match_result` 格式
@@ -54,4 +54,5 @@
 - 页面是登录墙、Cookie 提示、纯导航、隐私政策 → `summary` 留空，其他字段尽量从页头/页脚提取，`confidence: 20`。
 - 页面是多公司榜单（”Top 20 工具”）→ 只提取**主标题那一家**，并在 `confidence` 里扣分（≤40）。
 - 页面与公司无关（404、跳转到别的品牌）→ 全部留空，`confidence: 0`。
-- 页面主体是咨询/培训/媒体/政府/协会 → `industry` 填 “Consulting” 或 “Media”，`match_score` ≤ 25，`confidence: 60`。这些不是制造业买方，但要诚实记录。
+- 页面主体是政府机构或行业协会 → `industry` 填 `Government` 或 `Association`，`match_score` ≤ 25。
+- 页面主体是咨询/培训/媒体公司，且 ICP 行业里没有它们 → `industry` 填 `Consulting` / `Training` / `Media`，`match_score` ≤ 25。ICP 本来就针对这类公司时，按正常口径打分。
