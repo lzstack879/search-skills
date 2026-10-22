@@ -494,6 +494,28 @@ def _append_log(line: str) -> None:
 
 
 def cmd_leadgen(args) -> int:
+    # Hybrid mode: 80% from PDFs, 20% from search
+    if args.hybrid:
+        store = Store(args.db).init()
+        icp = load_icp(args.icp or DEFAULT_ICP, args)
+        from .hybrid import run_hybrid_leadgen
+        stats = asyncio.run(run_hybrid_leadgen(
+            icp, store, DeepSeekClient(),
+            target=args.topics * 25,
+            pdf_ratio=0.8,
+        ))
+        print('hybrid: pdf=%s search=%s stored=%s calls=%s cost=¥%.3f' % (
+            stats['pdf_count'], stats['search_count'],
+            stats['stored'] + stats['search_count'], stats['calls'],
+            stats['calls'] * 0.005))
+        usage = usage_summary()
+        print('today: %s calls, %.4f CNY | total companies %s' % (
+            usage['today_search'] + usage['today_fetch'], usage['total_cny'],
+            store.stats()['companies'],
+        ))
+        return 0
+
+    # Original search-only mode
     gen, store = _make_leadgen(args)
 
     async def _round(fetcher):
@@ -664,6 +686,7 @@ def _add_leadgen_args(parser) -> None:
     parser.add_argument('--pages', type=int, default=2, help='list pages fetched per topic')
     parser.add_argument('--fetch', type=int, default=4, help='company homepages fetched per round')
     parser.add_argument('--budget', type=int, default=0, help='max search+fetch calls per day (0 = unlimited)')
+    parser.add_argument('--hybrid', action='store_true', help='PDF harvest (80%%) + search (20%%), much cheaper')
     parser.add_argument('--cloud-fetch', action='store_true', help='skip local rendering, DeepSeek Fetch only')
     parser.add_argument('--seeds', metavar='CSV', help='skip search, harvest these domains')
     parser.add_argument('--no-llm', action='store_true', help='heuristics only, no chat calls')
